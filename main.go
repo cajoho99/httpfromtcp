@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,30 +14,44 @@ func main() {
 		fmt.Println(err)
 	}
 
-	defer file.Close()
+	lines := getLinesChannel(file)
 
-	const chunkSize = 8
+	for line := range lines {
 
-	buff := make([]byte, chunkSize)
-
-	currentLine := ""
-
-	for {
-		bytesRead, err := file.Read(buff)
-
-		if err != nil {
-			if err != io.EOF {
-				fmt.Println(err)
-			}
-			break
-		}
-		str := string(buff[:bytesRead])
-		splitStrings := strings.Split(str, "\n")
-		currentLine += splitStrings[0]
-		if len(splitStrings) > 1 {
-			fmt.Printf("read: %s\n", currentLine)
-			currentLine = ""
-			currentLine += splitStrings[1]
-		}
+		fmt.Printf("read: %s\n", line)
 	}
+}
+
+func getLinesChannel(f io.ReadCloser) <-chan string {
+	out := make(chan string)
+
+	go func() {
+		defer f.Close()
+		defer close(out)
+
+		currentLine := ""
+
+		for {
+			buff := make([]byte, 8, 8)
+			n, err := f.Read(buff)
+			if err != nil {
+
+				if errors.Is(err, io.EOF) {
+					return
+				}
+				break
+			}
+			str := string(buff[:n])
+			splitStrings := strings.Split(str, "\n")
+			currentLine += splitStrings[0]
+			if len(splitStrings) > 1 {
+				out <- currentLine
+				currentLine = ""
+				currentLine += splitStrings[1]
+			}
+		}
+	}()
+
+	return out
+
 }
