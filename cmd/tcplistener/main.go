@@ -7,6 +7,8 @@ import (
 	"log"
 	"net"
 	"strings"
+
+	"github.com/cajoho99/httpfromtcp/internal/request"
 )
 
 const port = ":42069"
@@ -31,10 +33,13 @@ func main() {
 
 		fmt.Printf("Connection established with %s\n", conn.RemoteAddr())
 
-		for line := range getLinesChannel(conn) {
-			fmt.Printf("%s\n", line)
-		}
+		req, err := request.RequestFromReader(conn)
+
+		req.RequestLine.Print()
+
 		fmt.Println("Connection to ", conn.RemoteAddr(), "closed")
+
+		conn.Close()
 	}
 }
 

@@ -132,6 +132,15 @@ func parseRequestLine(b []byte) (RequestLine, int, error) {
 
 }
 
+func (r *RequestLine) Print() {
+	fmt.Printf(
+		"Request line:\n- Method: %s\n- Target: %s\n- Version: %s\n",
+		r.Method,
+		r.RequestTarget,
+		r.HttpVersion,
+	)
+}
+
 func isAlphabeticAndUppercase(s string) bool {
 	return !strings.ContainsFunc(s,
 		func(r rune) bool {
